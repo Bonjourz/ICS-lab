@@ -1,2 +1,2 @@
 # ICS-lab
-ICS labs for SJTU
+Naive answers for ICS labs
