@@ -1,0 +1,65 @@
+# copy.ys
+# Zhu Bojun 515030910298
+
+	.pos 0
+init:
+	irmovl Stack, %esp
+	irmovl Stack, %ebp
+	call Main
+	halt
+	
+	.align 4
+# Source block
+src:
+	.long 0x00a
+	.long 0x0b0
+	.long 0xc00
+# Destination block
+dest:
+	.long 0x111
+	.long 0x222
+	.long 0x333
+	
+Main:
+	pushl %ebp
+	rrmovl %esp, %ebp
+	irmovl $3, %eax
+	irmovl dest, %edx
+	irmovl src, %ebx
+	pushl %eax
+	pushl %edx
+	pushl %ebx
+	call COPY_BLOCK
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+	
+COPY_BLOCK:
+	pushl %ebp
+	rrmovl %esp, %ebp
+	irmovl $0, %eax		# result = 0;
+	mrmovl 16(%ebp), %edx	# len
+	mrmovl 12(%ebp), %ebx	# dest
+	mrmovl 8(%ebp), %ecx	# src
+	andl %edx, %edx
+	jle End
+
+Loop:
+	irmovl $4, %edi
+	mrmovl (%ecx), %esi		# val = *src
+	addl %edi, %ecx			# src++
+	rmmovl %esi, (%ebx)		# *dest = val
+	addl %edi, %ebx			# dest++
+	xorl %esi, %eax			# result ^= val
+	irmovl $1, %edi
+	subl %edi, %edx			# len--
+	andl %edx, %edx
+	jg Loop
+End:
+	rrmovl %ebp,%esp
+	popl %ebp
+	ret
+
+# Stack
+	.pos 0x100
+Stack:

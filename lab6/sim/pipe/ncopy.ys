@@ -1,0 +1,324 @@
+#/* $begin ncopy-ys */ 
+##################################################################
+# ncopy.ys - Copy a src block of len ints to dst.
+# Return the number of positive ints (>0) contained in src.
+#
+# Include your name and ID here.
+# Zhu Bojun 515030910298
+# Describe how and why you modified the baseline code.
+#1. I modify the hcl code of mrmovl, so it can reduce a bubble between
+#   mrmovl and rmmovl.
+#
+#2. I also modify the hcl code of iaddl and ret.
+#   In the beginning of jump table, you should push the address of
+#   the table to the memory and return. In my code, the address can
+#   be determined when the instruction of "mrmovl JTEnd(%edx),%edx"
+#   goes to the write back stage, so if we forward the value of %edx
+#   to the predicted address, it can reduce the bubble from 3 to 1(I
+#   add instruction of nop to replace the bubble).
+#
+#3. I discover that when the nocopy.ys program ends, it always 
+#   jumps to the instruction which address is 0x29, so I modify the code
+#   so that it can reduce many instruction to decrease the CPE.
+#
+#4. I unroll the 8 loops to one loop, so it can reduce the waste time of 
+#   judging, and when the number of elements needed to copy fewer than 16,
+#   I use jump table to determine where to jump.
+##################################################################
+# Do not modify this portion
+# Function prologue.
+ncopy:	pushl %ebp		# Save old frame pointer
+	rrmovl %esp,%ebp	# Set up new frame pointer
+	pushl %esi		# Save callee-save regs
+	pushl %ebx
+	pushl %edi
+	mrmovl 8(%ebp),%ebx	# src
+	mrmovl 16(%ebp),%edx	# len
+	mrmovl 12(%ebp),%ecx	# dst
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorl %eax,%eax		# count = 0;
+	xorl %esi,%esi
+
+Initial:
+	iaddl $-16,%edx
+	jl Case
+
+
+Loop1:
+	andl %esi,%esi
+	mrmovl (%ebx),%esi
+	rmmovl %esi,(%ecx)
+	jle Loop2
+	iaddl $1,%eax
+
+Loop2:
+	andl %esi,%esi
+	mrmovl 4(%ebx),%esi
+	rmmovl %esi,4(%ecx)
+	jle Loop3
+	iaddl $1,%eax
+
+Loop3:
+	andl %esi,%esi
+	mrmovl 8(%ebx),%esi
+	rmmovl %esi,8(%ecx)
+	jle Loop4
+	iaddl $1,%eax
+
+Loop4:	
+	andl %esi,%esi
+	mrmovl 12(%ebx),%esi
+	rmmovl %esi,12(%ecx)
+	jle Loop5
+	iaddl $1,%eax
+
+Loop5:
+	andl %esi,%esi
+	mrmovl 16(%ebx),%esi
+	rmmovl %esi,16(%ecx)
+	jle Loop6
+	iaddl $1,%eax
+
+Loop6:
+	andl %esi,%esi
+	mrmovl 20(%ebx),%esi
+	rmmovl %esi,20(%ecx)
+	jle Loop7
+	iaddl $1,%eax
+
+Loop7:
+	andl %esi,%esi
+	mrmovl 24(%ebx),%esi
+	rmmovl %esi,24(%ecx)
+	jle Loop8
+	iaddl $1,%eax
+
+Loop8:
+	andl %esi,%esi
+	mrmovl 28(%ebx),%esi
+	rmmovl %esi,28(%ecx)
+	jle Loop9
+	iaddl $1,%eax
+
+Loop9:
+	andl %esi,%esi
+	mrmovl 32(%ebx),%esi
+	rmmovl %esi,32(%ecx)
+	jle Loop10
+	iaddl $1,%eax
+
+Loop10:
+	andl %esi,%esi
+	mrmovl 36(%ebx),%esi
+	rmmovl %esi,36(%ecx)
+	jle Loop11
+	iaddl $1,%eax
+
+Loop11:
+	andl %esi,%esi
+	mrmovl 40(%ebx),%esi
+	rmmovl %esi,40(%ecx)
+	jle Loop12
+	iaddl $1,%eax
+
+Loop12:
+	andl %esi,%esi
+	mrmovl 44(%ebx),%esi
+	rmmovl %esi,44(%ecx)
+	jle Loop13
+	iaddl $1,%eax
+
+Loop13:
+	andl %esi,%esi
+	mrmovl 48(%ebx),%esi
+	rmmovl %esi,48(%ecx)
+	jle Loop14
+	iaddl $1,%eax
+
+Loop14:
+	andl %esi,%esi
+	mrmovl 52(%ebx),%esi
+	rmmovl %esi,52(%ecx)
+	jle Loop15
+	iaddl $1,%eax
+
+Loop15:
+	andl %esi,%esi
+	mrmovl 56(%ebx),%esi
+	rmmovl %esi,56(%ecx)
+	jle Loop16
+	iaddl $1,%eax
+
+Loop16:
+	andl %esi,%esi
+	mrmovl 60(%ebx),%esi
+	rmmovl %esi,60(%ecx)
+	jle Loop
+	iaddl $1,%eax
+
+Loop:
+	iaddl $64,%ecx
+	iaddl $64,%ebx
+	jmp Initial
+
+Case:
+	addl %edx,%edx
+	addl %edx,%edx
+	mrmovl JTEnd(%edx),%edx # W
+	pushl %edx		# M
+	ret			# E
+	nop			# D
+
+T15:	
+	andl %esi,%esi
+	mrmovl 60(%ebx),%esi
+	rmmovl %esi,60(%ecx)	
+	jle T14			# if so, goto T14
+	iaddl $1,%eax		# count++
+
+T14:	andl %esi,%esi
+	mrmovl 56(%ebx),%esi
+	rmmovl %esi,56(%ecx)
+	jle T13			# if so, goto T13
+	iaddl $1,%eax		# count++
+
+T13:	
+	andl %esi,%esi
+	mrmovl 52(%ebx),%esi
+	rmmovl %esi,52(%ecx)
+	jle T12			# if so, goto T12
+	iaddl $1,%eax		# count++
+
+T12:	
+	andl %esi,%esi
+	mrmovl 48(%ebx),%esi
+	rmmovl %esi,48(%ecx)
+	jle T11			# if so, goto T11
+	iaddl $1,%eax		# count++
+
+T11:	
+	andl %esi,%esi
+	mrmovl 44(%ebx),%esi
+	rmmovl %esi,44(%ecx)
+	jle T10			# if so, goto T10
+	iaddl $1,%eax		# count++
+
+T10:	
+	andl %esi,%esi
+	mrmovl 40(%ebx),%esi
+	rmmovl %esi,40(%ecx)
+	jle T9			# if so, goto T9
+	iaddl $1,%eax		# count++
+
+T9:	
+	andl %esi,%esi
+	mrmovl 36(%ebx),%esi
+	rmmovl %esi,36(%ecx)
+	jle T8			# if so, goto T8
+	iaddl $1,%eax		# count++
+
+T8:	
+	andl %esi,%esi
+	mrmovl 32(%ebx),%esi
+	rmmovl %esi,32(%ecx)
+	jle T7			# if so, goto T7
+	iaddl $1,%eax		# count++
+
+T7:	
+	andl %esi,%esi
+	mrmovl 28(%ebx),%esi
+	rmmovl %esi,28(%ecx)
+	jle T6			# if so, goto T6
+	iaddl $1,%eax		# count++
+
+T6:	
+	andl %esi,%esi
+	mrmovl 24(%ebx),%esi
+	rmmovl %esi,24(%ecx)
+	jle T5			# if so, goto T5
+	iaddl $1,%eax		# count++
+
+T5:	andl %esi,%esi	
+	mrmovl 20(%ebx),%esi
+	rmmovl %esi,20(%ecx)
+	jle T4			# if so, goto T4
+	iaddl $1,%eax		# count++
+
+T4:	
+	andl %esi,%esi
+	mrmovl 16(%ebx),%esi
+	rmmovl %esi,16(%ecx)
+	jle T3			# if so, goto T3
+	iaddl $1,%eax		# count++
+
+T3:	
+	andl %esi,%esi
+	mrmovl 12(%ebx),%esi
+	rmmovl %esi,12(%ecx)
+	jle T2			# if so, goto T2
+	iaddl $1,%eax		# count++
+
+T2:	
+	andl %esi,%esi
+	mrmovl 8(%ebx),%esi
+	rmmovl %esi,8(%ecx)
+	jle T1			# if so, goto T1
+	iaddl $1,%eax		# count++
+
+T1:	
+	andl %esi,%esi
+	mrmovl 4(%ebx),%esi
+	rmmovl %esi,4(%ecx)
+	jle T0			# if so, goto T0
+	iaddl $1,%eax		# count++
+
+T0:
+	andl %esi,%esi	
+	mrmovl (%ebx),%esi
+	rmmovl %esi,(%ecx)
+	jle Last
+	iaddl $1,%eax
+
+Last:
+	andl %esi,%esi
+	jle 0x29
+	iaddl $1,%eax
+
+End:
+	jmp 0x29
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	popl %edi               # Restore callee-save registers
+	popl %ebx
+	popl %esi
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+##################################################################
+.align 4
+JTBegin:
+	.long Last
+	.long T0
+	.long T1
+	.long T2
+	.long T3
+	.long T4
+	.long T5
+	.long T6
+	.long T7
+	.long T8
+	.long T9
+	.long T10
+	.long T11
+	.long T12
+	.long T13
+	.long T14
+JTEnd:	.long T15
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
